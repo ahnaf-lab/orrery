@@ -1,0 +1,12 @@
+{
+  "name": "fixture-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "left-pad": "^1.0.0",
+    "chalk": "^4.0.0",
+    "circ-a": "^1.0.0"
+  },
+  "devDependencies": {
+    "shared-dep": "^1.0.0"
+  }
+}
