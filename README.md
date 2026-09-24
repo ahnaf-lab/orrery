@@ -8,11 +8,13 @@ toward the sun.
 
 Under the hood, a project's `package.json` and lockfile are parsed into a
 depth-ranked dependency tree, with each resolved package annotated with its
-release age. This milestone renders that tree as one static ASCII frame:
-the project is the sun at the centre, each dependency orbits at a radius set
-by its depth, and older, more neglected releases have visibly decayed
-inward. Stepping through successive frames as an animation lands in a later
-milestone; for now the tool prints a single frame.
+release age. That tree renders as an ASCII frame: the project is the sun at
+the centre, each dependency orbits at a radius set by its depth, and older,
+more neglected releases have visibly decayed inward. Beyond today's static
+frame, the tool can also step or play through a synthetic time axis built
+from the tree's own release dates — from each package's oldest release up
+to today — so you can watch the decay happen frame by frame instead of only
+seeing where it ended up.
 
 ## Install
 
@@ -52,6 +54,27 @@ orrery --offline             # skip release-age lookups entirely
 orrery --width 81 --height 31  # render a bigger canvas
 orrery --help                 # show usage
 ```
+
+### Playback
+
+Instead of just today's frame, `orrery` can step or play through a synthetic
+time axis: evenly spaced points from the oldest release date found anywhere
+in the tree up to today. The last frame always matches the static frame
+above exactly.
+
+```sh
+orrery --play                        # animate through the whole axis once
+orrery --play --frames 40 --interval 40   # more frames, faster playback
+orrery --frame 0                     # render just the axis's oldest point
+orrery --frame 5 --frames 12         # render one specific frame
+```
+
+- `--frames <n>` sets how many points are on the axis (default 24).
+- `--interval <ms>` sets the delay between frames while playing (default 120).
+- `--frame <n>` renders a single frame (0-based) instead of animating —
+  useful for scripting or generating a specific still.
+- A project built with `--offline` has no release dates to animate, so its
+  time axis collapses to the single frame already shown by default.
 
 By default, `orrery` looks up each distinct package's publish dates from the
 public npm registry (`https://registry.npmjs.org/<package>`) — one request
