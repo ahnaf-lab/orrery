@@ -76,6 +76,33 @@ orrery --frame 5 --frames 12         # render one specific frame
 - A project built with `--offline` has no release dates to animate, so its
   time axis collapses to the single frame already shown by default.
 
+### Scripting and CI
+
+Three flags exist for driving `orrery` from a script rather than a terminal:
+
+```sh
+orrery --range 0:5                      # render frames 0-5 back-to-back, no delay
+orrery --range 0:23 --json              # same, as a JSON array of frame records
+orrery --highlight left-pad             # mark one package with a '#' glyph
+orrery --snapshot ./frame.txt           # write the render to a file, not stdout
+orrery --range 0:5 --snapshot ./ci.txt  # capture a whole range to one file
+```
+
+- `--range <start>:<end>` renders every frame from `start` to `end` (0-based,
+  inclusive) on the synthetic time axis immediately, with no delay between
+  them — unlike `--play`, which is meant to be watched in real time.
+  Combining `--range` with `--play` or `--frame` is rejected.
+- `--highlight <name>` marks every node whose package name matches with a
+  `#` glyph in the ASCII render, regardless of its resolved or decay state.
+  With `--json`, matching nodes instead carry `"highlighted": true` so a
+  script can find them without re-parsing the ASCII grid.
+- `--snapshot <path>` writes the rendered output — a single frame, or every
+  frame in a `--range` — to a file instead of stdout, and prints a short
+  confirmation line in its place. This is what makes a CI screenshot
+  deterministic and diffable: run `orrery --snapshot`, then compare the file
+  against a checked-in golden copy. `--snapshot` cannot be combined with
+  `--play`, since playback is inherently a real-time, interactive loop.
+
 By default, `orrery` looks up each distinct package's publish dates from the
 public npm registry (`https://registry.npmjs.org/<package>`) — one request
 per package name, reused for every version and every place that package

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderFrame, decayFraction } from '../src/render.js';
+import { renderFrame, decayFraction, annotateHighlight } from '../src/render.js';
 
 function makeTree() {
   return {
@@ -74,4 +74,34 @@ test('renderFrame pulls a heavily-aged package closer to the sun than a fresh on
 
 test('renderFrame rejects a canvas smaller than 3x3', () => {
   assert.throws(() => renderFrame(makeTree(), { width: 2, height: 2 }), /at least 3x3/);
+});
+
+test('renderFrame marks a highlighted package with its own glyph, overriding decay state', () => {
+  const frame = renderFrame(makeTree(), { width: 41, height: 21, highlight: 'stale-dep' });
+  assert.ok(frame.includes('#'), 'expected the highlight glyph to appear');
+  // stale-dep would otherwise render as '.' — confirm the highlight glyph
+  // actually replaced it rather than just appearing somewhere unrelated.
+  const withoutHighlight = renderFrame(makeTree(), { width: 41, height: 21 });
+  assert.notEqual(frame, withoutHighlight);
+});
+
+test('renderFrame highlight is a no-op when the name matches nothing in the tree', () => {
+  const frame = renderFrame(makeTree(), { width: 41, height: 21, highlight: 'not-in-tree' });
+  assert.ok(!frame.includes('#'));
+});
+
+test('annotateHighlight tags matching nodes with highlighted: true, leaves others untouched', () => {
+  const tree = makeTree();
+  const annotated = annotateHighlight(tree, 'stale-dep');
+
+  const stale = annotated.children.find((c) => c.name === 'stale-dep');
+  const fresh = annotated.children.find((c) => c.name === 'fresh-dep');
+
+  assert.equal(stale.highlighted, true);
+  assert.equal(fresh.highlighted, undefined);
+});
+
+test('annotateHighlight returns the same tree unchanged when name is omitted', () => {
+  const tree = makeTree();
+  assert.equal(annotateHighlight(tree, undefined), tree);
 });

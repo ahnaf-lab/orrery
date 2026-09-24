@@ -16,6 +16,7 @@ const CIRCULAR_CHAR = 'x';
 const FRESH_CHAR = '*';
 const AGING_CHAR = 'o';
 const STALE_CHAR = '.';
+const HIGHLIGHT_CHAR = '#';
 
 /**
  * Fraction (0..1) of the way from "just released" to "fully decayed" that a
@@ -27,12 +28,32 @@ export function decayFraction(ageDays, horizonDays = DEFAULT_HORIZON_DAYS) {
   return Math.min(Math.max(ageDays, 0) / horizonDays, 1);
 }
 
-function glyphFor(node, fraction) {
+function glyphFor(node, fraction, highlight) {
+  if (highlight && node.name === highlight) return HIGHLIGHT_CHAR;
   if (node.unresolved) return UNRESOLVED_CHAR;
   if (node.circular) return CIRCULAR_CHAR;
   if (fraction < 0.33) return FRESH_CHAR;
   if (fraction < 0.66) return AGING_CHAR;
   return STALE_CHAR;
+}
+
+/**
+ * Return a clone of `root` with `highlighted: true` set on every node whose
+ * name matches `name` — used by --json output so a scripted CI consumer can
+ * find the highlighted package(s) without re-parsing the ASCII frame.
+ *
+ * A no-op that returns `root` unchanged (not cloned) when `name` is falsy,
+ * so callers can pass an optional --highlight value straight through.
+ *
+ * @param {object} root
+ * @param {string} [name]
+ * @returns {object}
+ */
+export function annotateHighlight(root, name) {
+  if (!name) return root;
+  const clone = { ...root, children: root.children.map((child) => annotateHighlight(child, name)) };
+  if (root.name === name) clone.highlighted = true;
+  return clone;
 }
 
 /**
@@ -53,10 +74,14 @@ function glyphFor(node, fraction) {
  *   visually round orbit rather than a tall ellipse.
  * @param {number} [options.height] canvas height in characters (odd numbers centre exactly)
  * @param {number} [options.horizonDays] age in days for full orbital decay
+ * @param {string} [options.highlight] package name to mark with a distinct
+ *   glyph (`#`) regardless of its resolved/decay state, overriding depth
+ *   ties by z-order so it's always visible — for picking one package out of
+ *   a frame in a scripted CI screenshot
  * @returns {string} the frame, as `height` lines of `width` characters each
  */
 export function renderFrame(root, options = {}) {
-  const { width = 61, height = 23, horizonDays = DEFAULT_HORIZON_DAYS } = options;
+  const { width = 61, height = 23, horizonDays = DEFAULT_HORIZON_DAYS, highlight } = options;
   if (width < 3 || height < 3) {
     throw new Error('renderFrame needs a canvas of at least 3x3');
   }
@@ -96,7 +121,7 @@ export function renderFrame(root, options = {}) {
 
       if (x < 0 || x >= width || y < 0 || y >= height) return;
       if (x === centerX && y === centerY) return; // never overwrite the sun
-      grid[y][x] = glyphFor(node, fraction);
+      grid[y][x] = glyphFor(node, fraction, highlight);
     });
   }
 
