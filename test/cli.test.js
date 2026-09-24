@@ -10,13 +10,22 @@ const projectRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const binPath = path.join(projectRoot, 'bin', 'orrery.js');
 const fixturesDir = path.join(projectRoot, 'test', 'fixtures');
 
-test('CLI --offline prints a JSON dependency tree for the target directory', async () => {
-  const { stdout } = await execFileAsync('node', [binPath, '--dir', fixturesDir, '--offline']);
+test('CLI --json --offline prints a JSON dependency tree for the target directory', async () => {
+  const { stdout } = await execFileAsync('node', [binPath, '--dir', fixturesDir, '--offline', '--json']);
   const output = JSON.parse(stdout);
 
   assert.equal(output.lockfileName, 'package-lock.json');
   assert.equal(output.tree.name, 'fixture-app');
   assert.ok(output.tree.children.some((c) => c.name === 'left-pad'));
+});
+
+test('CLI without --json renders an ASCII frame with the sun at its centre', async () => {
+  const { stdout } = await execFileAsync('node', [binPath, '--dir', fixturesDir, '--offline', '--width', '41', '--height', '21']);
+  const lines = stdout.replace(/\n$/, '').split('\n');
+
+  assert.equal(lines.length, 21);
+  assert.ok(lines.every((line) => line.length === 41));
+  assert.equal(lines[10][20], '@');
 });
 
 test('CLI --help exits cleanly and does not touch the network or a project dir', async () => {

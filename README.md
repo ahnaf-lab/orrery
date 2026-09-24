@@ -6,10 +6,13 @@ and its orbit visibly decays the longer it's gone since a release — so you can
 step through the animation frame by frame and watch technical debt drift
 toward the sun.
 
-This first milestone builds the underlying **dependency model**: parsing a
-project's `package.json` and lockfile into a depth-ranked tree, with each
-resolved package annotated with its release age. The animation itself lands
-in a later milestone; today the tool prints the model as JSON.
+Under the hood, a project's `package.json` and lockfile are parsed into a
+depth-ranked dependency tree, with each resolved package annotated with its
+release age. This milestone renders that tree as one static ASCII frame:
+the project is the sun at the centre, each dependency orbits at a radius set
+by its depth, and older, more neglected releases have visibly decayed
+inward. Stepping through successive frames as an animation lands in a later
+milestone; for now the tool prints a single frame.
 
 ## Install
 
@@ -32,26 +35,35 @@ Run it from inside any Node project that has a `package-lock.json` (or
 orrery --dir /path/to/project
 ```
 
-This prints the dependency tree as JSON: each node has a `name`, resolved
-`version`, `depth` (distance from the project root along the dependency
-graph — not physical `node_modules` nesting), and, unless you pass
-`--offline`, a `releaseDate` and `ageDays` for its resolved version.
+This prints one ASCII frame: `@` is the project itself at the centre, and
+each dependency is drawn as a point orbiting it — further out the deeper it
+sits in the dependency graph, and pulled inward the longer it's been since
+its resolved version was released:
+
+- `*` — released recently
+- `o` — aging
+- `.` — stale, and visibly drifted toward the sun
+- `?` — couldn't be resolved from the lockfile at all
+- `x` — a circular dependency, cut off rather than expanded forever
 
 ```sh
-orrery --offline    # skip release-age lookups entirely
-orrery --help        # show usage
+orrery --json               # print the dependency tree as JSON instead
+orrery --offline             # skip release-age lookups entirely
+orrery --width 81 --height 31  # render a bigger canvas
+orrery --help                 # show usage
 ```
 
 By default, `orrery` looks up each distinct package's publish dates from the
 public npm registry (`https://registry.npmjs.org/<package>`) — one request
 per package name, reused for every version and every place that package
-appears in the tree. Pass `--offline` to build the tree with no network
-access at all; the ages simply won't be filled in.
+appears in the tree. Pass `--offline` to render with no network access at
+all; every package is then drawn as if freshly released, since its age is
+unknown rather than assumed.
 
-A package that can't be resolved from the lockfile (an unmet optional
-dependency, for example) is included in the tree with `unresolved: true`
-instead of causing the whole run to fail. Circular dependencies are cut
-where they repeat and marked `circular: true` rather than expanded forever.
+With `--json`, each tree node has a `name`, resolved `version`, `depth`
+(distance from the project root along the dependency graph — not physical
+`node_modules` nesting), and, unless `--offline` was passed, a `releaseDate`
+and `ageDays` for its resolved version.
 
 Only npm's own lockfile formats (`package-lock.json` versions 1 through 3,
 and `npm-shrinkwrap.json`) are supported for now.

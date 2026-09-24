@@ -1,6 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { buildDependencyTree, attachReleaseAges } from './model.js';
+import { renderFrame } from './render.js';
+
+export { renderFrame };
 
 const LOCKFILE_NAMES = ['package-lock.json', 'npm-shrinkwrap.json'];
 
